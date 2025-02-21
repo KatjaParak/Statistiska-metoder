@@ -56,10 +56,15 @@ class LinearRegression:
         return self.SSR/self.Syy
 
     @property
-    def confidence_level(self):
+    def confidence_level(self):  # contains the confidence level
         return round(self.Rsq, 3)
 
-    @property  # calculates the Pearson correlation between all pairs of parameters
+    @property
+    def signif_level(self):  # calculates the significance level
+        return round((1 - self.Rsq), 3)
+
+    @property
+    # calculates the Pearson correlation between all pairs of parameters
     def individuall_corr(self):
         return [stats.pearsonr(self.X[:, i], self.X[:, j])[:][0]
                 for i in range(1, self.d+1) for j in range(i+1, self.d+1) if i != j]
@@ -76,3 +81,27 @@ class LinearRegression:
 
         for f, val in zip(features, self.individuall_signif):
             print(f"P-value for {f}: {val}")
+
+    @property
+    # calculates confidence intervals on individual parameters
+    def confidence_intervall(self):
+        features = ['Kinematic', 'Geometric', 'Inertial', 'Observer']
+        low = [self.fit[i] - (stats.t.ppf(self.signif_level/2, self.n-self.d-1))*(self.std_deviation*np.sqrt(self.c[i, i]))
+               for i in range(1, self.d+1)]
+        high = [self.fit[i] + (stats.t.ppf(self.signif_level/2, self.n-self.d-1))
+                * (self.std_deviation*np.sqrt(self.c[i, i])) for i in range(1, self.d+1)]
+
+        for f, l, h in zip(features, low, high):
+            print(f"The confidence interval for {f}: [{l}, {h}]")
+
+    @property
+    def print_corr(self):
+        features = ['Kinematic', 'Geometric', 'Inertial', 'Observer']
+        corr_coeff = self.individuall_corr
+        r = 0
+
+        for i, f in enumerate(features):
+            for i_2, f_2 in enumerate(features[i+1:]):
+                print(
+                    f"The Pearson correlation between {features[i]} and {f_2}: {corr_coeff[r]}")
+                r += 1
